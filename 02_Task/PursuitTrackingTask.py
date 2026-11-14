@@ -34,6 +34,9 @@ After a session is completed, the next one starts automatically.
 Drawn segments are saved per participant, so the task can be stopped and
 resumed without re-using the same random segments.
 
+If no joystick is connected (for testing), the mouse controls the cursor and the
+SPACE key replaces the joystick start button.
+
 Participant-facing instructions are in French.
 
 -------------
@@ -97,7 +100,7 @@ N_MASKS = 2                # masks per trial (start + end)
 N_TRIALS_FAM = 4           # familiarisation trials (half right hand, half left hand)
 N_BLOCKS_TEST = 3          # blocks of (Repeated, Random, Mirror) per test session
 N_TRIALS_TRAINING = 60
-PAUSE_SHORT_S = 20
+PAUSE_SHORT_S = 30
 PAUSE_LONG_S = 300         # after training
 PAUSE_EVERY = 10           # pause every x training trials
 RANDOMIZE_TEST_ORDER = False   # False = the group's default order for every participant
@@ -303,11 +306,11 @@ NASA_HIGH = ["Très élevée", "Très élevée", "Très élevée", "Parfaitement
 GROUPS = {
     "Implicit": dict(folder="GrpImp", default_order=[1, 2, 3], question_every=60,
                      blue_beep=False, bars=False, post_lines=POST_IMPLICIT),
-    "Explicit": dict(folder="GrpE", default_order=[3, 1, 2], question_every=20,
+    "Explicit": dict(folder="GrpE", default_order=[3, 1, 2], question_every=60,
                      blue_beep=True, bars=False, post_lines=POST_EXPLICIT),
-    "ExplicitGuided": dict(folder="GrpExG", default_order=[1, 2, 3], question_every=20,
+    "ExplicitGuided": dict(folder="GrpExG", default_order=[1, 2, 3], question_every=60,
                            blue_beep=True, bars=True, post_lines=POST_GUIDED),
-    "Control": dict(folder="GrpCtr", default_order=None, question_every=20,
+    "Control": dict(folder="GrpCtr", default_order=None, question_every=60,
                     blue_beep=True, bars=True, post_lines=POST_GUIDED),
 }
 GROUP_MENU = {1: "Implicit", 2: "Explicit", 3: "ExplicitGuided", 4: "Control"}
@@ -434,6 +437,13 @@ def quit_task():
     sys.exit()
 
 
+def is_start_event(event):
+    """Joystick start button, or SPACE key when no joystick is connected (testing)."""
+    if event.type == pygame.JOYBUTTONDOWN:
+        return event.button in JOY_START_BUTTONS
+    return joystick is None and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE
+
+
 def play_session_sound(session):
     path = SESSION_SOUNDS[session]
     if winsound is not None and path.exists():
@@ -488,7 +498,7 @@ def wait_for_button(lines, on_escape=None):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_task()
-            elif event.type == pygame.JOYBUTTONDOWN and event.button in JOY_START_BUTTONS:
+            elif is_start_event(event):
                 return True
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 if on_escape == "back":
@@ -568,8 +578,8 @@ def run_trial(segment_ids, mask_ids, table, mirror=False, lock_cursor=False, cue
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.JOYBUTTONDOWN:
-                if event.button in JOY_START_BUTTONS and not started and not countdown_active:
+            elif is_start_event(event):
+                if not started and not countdown_active:
                     countdown_active = True
                     countdown_start = time.time()
                     countdown_value = 3
@@ -960,7 +970,7 @@ if __name__ == "__main__":
         joystick.init()
         print(f"✅ Joystick détecté : {joystick.get_name()}")
     else:
-        print("⚠️ Aucun joystick détecté !!! La souris devient le curseur!!")
+        print("⚠️ Aucun joystick détecté !!! La souris devient le curseur et ESPACE remplace le bouton!!")
         joystick = None
 
     # Cursor range on screen (JOY_RANGE_CM) and scaling of the segments to the screen
