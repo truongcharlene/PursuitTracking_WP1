@@ -1,4 +1,4 @@
-# PursuitTracking_WP1
+# PursuitTracking
 Article : Augmenting explicit sequence awareness during motor imagery practice promotes effector-independent consolidation 
 
 Code and data of a study on motor sequence learning through motor imagery, using a pursuit tracking task.
